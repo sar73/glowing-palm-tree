@@ -4,11 +4,14 @@ set PATH=%PATH%;C:\lastools\bin;
 :: CHANGES DIRECTORY
 cd/d X:\Arch^&CivilEng\ResearchProjects\GGiardina\PhD\sar73\CaseStudies\Napa\Data
 
-::Adapted from this tutorial
+::Adapted from this material
 ::https://rapidlasso.com/2013/10/13/tutorial-lidar-preparation/
+::https://groups.google.com/forum/#!topic/lastools/R9d5cMFb2_o
 
 ::Indexing significantly improves the speed of spatial queries
-lasindex -i Laser\2014\Sample\*.laz -cores 3
+::lasindex -i Laser\2014\Sample\*.laz -cores 3
+
+::Before processing sanity check. Take before processing screenshot
 lasview -i Laser\2014\Sample\*.laz -gui
 
 ::Now make sure that our work will be worthwhile by running a quick visualization based of how well the flight strips fit togeth
@@ -18,7 +21,7 @@ lasoverlap -i laser\2014\overlapped\*.laz ^
             -odix "merged-overlap" -opng ^
 
 ::Create a temporary tiles directory
-rmdir LasTools\Tiles\Sample /s /q
+::rmdir LasTools\Tiles\Sample /s /q
 mkdir LasTools\Tiles\Sample
 
 :: create a temporary and reversible tiles with a size of 250 and a buffer of 25
@@ -29,7 +32,7 @@ lastile -i laser\2014\sample\*.laz ^
             -o tiled.laz -olaz 
 
 :: create a temporary ground directory
-rmdir LasTools\Ground\Sample /s /q
+::rmdir LasTools\Ground\Sample /s /q
 mkdir LasTools\Ground\Sample
 
 :: This is a tool for bare-earth extraction: it classifies LIDAR
@@ -46,7 +49,7 @@ lasground -i LasTools\Tiles\Sample\*.laz ^
 rmdir LasTools\Tiles\Sample /s /q
 
 ::create a height tiles directory
-rmdir LasTools\Height\Sample /s /q
+::rmdir LasTools\Height\Sample /s /q
 mkdir LasTools\Height\Sample
 
 ::Las Height uses the points classified as ground to construct a TIN and 
@@ -57,8 +60,11 @@ lasheight -i LasTools\Ground\Sample\*.laz ^
             -odir LasTools\Height\Sample -olaz ^
             -cores 4
 
+::deletes the lasground directory and it's contents
+rmdir LasTools\Ground\Sample /s /q
+
 ::create a height tiles directory
-rmdir LasTools\Classify\Sample /s /q
+::rmdir LasTools\Classify\Sample /s /q
 mkdir LasTools\Classify\Sample
 
 ::This tool classifies buildings and high vegetation. It requires that both
@@ -71,8 +77,10 @@ lasclassify -i LasTools\Height\Sample\*.laz ^
             -odir LasTools\Classify\Sample -olaz ^
             -cores 4
 
-::create a final tiles directory 
+::deletes the las height directory and it's contents
+rmdir Lastools\Height\Sample /s /q
 
+::create a final tiles directory 
 rmdir LasTools\Final\Sample /s /q
 mkdir LasTools\Final\Sample
 
@@ -83,6 +91,9 @@ lastile -i LasTools\Classify\Sample\*.laz ^
             -remove_buffer ^
             -odir LasTools\Final\Sample -olaz
 
-::Measure-Command { .\io.exe }
-::start "" /wait cmd /c "echo Quality checking complete!&echo(&pause"
+::delete the LasClassify
+rmdir LasTools\Classify\Sample /s /q
 
+::View sample after processing. This can also be compared with the original
+::to assess the quality of the process
+lasview -i LasTools\Final\Sample.*laz -gui
