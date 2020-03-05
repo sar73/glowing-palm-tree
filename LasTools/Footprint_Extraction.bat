@@ -65,8 +65,8 @@ lasheight -i LasTools\Ground\2011_n\*.laz ^
 ::deletes the lasground directory and it's contents
 rmdir LasTools\Ground\2011_n /s /q
 
-::create a height tiles directory
-::rmdir LasTools\Classify\2011_n /s /q
+::create a classify tiles directory
+rmdir LasTools\Classify\2011_n /s /q
 mkdir LasTools\Classify\2011_n
 
 ::This tool classifies buildings and high vegetation. It requires that both
