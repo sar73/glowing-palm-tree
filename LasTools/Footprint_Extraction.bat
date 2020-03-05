@@ -14,7 +14,7 @@ cd/d X:\Arch^&CivilEng\ResearchProjects\GGiardina\PhD\sar73\CaseStudies\Napa\Dat
 ::Before processing sanity check. Take before processing screenshot
 ::lasview -i Laser\2011_n\2011_n\*.laz -gui
 
-::Now make sure that our work will be worthwhile by running a quick visualization based of how well the flight strips fit togeth
+::Now make sure that our work will be worthwhile by running a quick visualization based of how well the flight strips fit together
 ::Examine how well the flightstrips fit together by identifying 
 ::lasoverlap -i laser\2011_n\overlapped\*.laz ^
 ::            -odir LasTools\Overlap ^
@@ -37,10 +37,8 @@ lastile -i laser\2011\*.laz ^
 ::rmdir LasTools\Ground\2011_n /s /q
 mkdir LasTools\Ground\2011_n
 
-:: This is a tool for bare-earth extraction: it classifies LIDAR
-::points into ground points (class = 2) and non-ground points::
-::(class = 1). This will run it on 4 cores (one tile per core) with
-::town settings and ultra_fine refinement
+:: This is a tool for bare-earth extraction: it classifies LIDAR points into ground points (class = 2) and non-ground points
+::(class = 1). This will run it on 4 cores (one tile per core) with town settings and ultra_fine refinement
 ::Pastes after a while
 lasground -i LasTools\Tiles\2011_n\*.laz ^
             -town -ultra_fine ^
@@ -54,8 +52,7 @@ rmdir LasTools\Tiles\2011_n /s /q
 ::rmdir LasTools\Height\2011_n /s /q
 mkdir LasTools\Height\2011_n
 
-::Las Height uses the points classified as ground to construct a TIN and 
-::then calculates the height of all other points in respect to this ground 
+::Las Height uses the points classified as ground to construct a TIN and then calculates the height of all other points in respect to this ground 
 ::surface. This will ignore points 2m below ground and 30m above it
 lasheight -i LasTools\Ground\2011_n\*.laz ^
             -drop_below 2 -drop_above 30 ^
@@ -69,12 +66,9 @@ rmdir LasTools\Ground\2011_n /s /q
 rmdir LasTools\Classify\2011_n /s /q
 mkdir LasTools\Classify\2011_n
 
-::This tool classifies buildings and high vegetation. It requires that both
-::bare-earth points (lasground) and points above ground (lasheight) have been 
-::computed. Step is for computing planarity/ruggedness. Higher = less false
-::positives but it may miss smaller buildings. This can be verified with 
-:: lasboundary and a kml output.
-:: Step size is the grid cell size for planar analysis. Lower = more accuracy, 
+::This tool classifies buildings and high vegetation. It requires that both bare-earth points (lasground) and points above ground (lasheight) have been 
+::computed. Step is for computing planarity/ruggedness. Higher = less false positives but it may miss smaller buildings. This can be verified with 
+:: lasboundary and a kml output. Step size is the grid cell size for planar analysis. Lower = more accuracy, 
 :: but the data must exist for interpolation to be accurate. Tutorial was 3
 :: default is 2
 lasclassify -i LasTools\Height\2011_n\*.laz ^
@@ -104,10 +98,8 @@ lastile -i LasTools\Classify\2011_n\*.laz ^
 ::lasview -i LasTools\Final\2011_n.*laz -gui
 
 mkdir LasTools\Footprints\2011_n
-::Determines the building footprints
-::lower concavity is better but more computationally expensive
-::default is 1.5, but 1.2 is the lowest without building loss
-::Class 6 is buildings, if this was changed to 5 if would identify vegetation
+::Determines the building footprints. lower concavity is better but more computationally expensive
+::default is 1.5, but 1.2 is the lowest without building loss Class 6 is buildings, if this was changed to 5 if would identify vegetation
 lasboundary -i LasTools\Final\2011_n\*.laz -merged ^
             -keep_class 6 ^
             -concavity 1.5 -disjoint ^
