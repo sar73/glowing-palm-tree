@@ -169,7 +169,7 @@ class Extract_Polygon_Coors(object):
 #a.request_information()
 
 #Extract coordinates from the polygon
-#b = Extract_Polygon_Coors()
-#b.request_filename()
+b = Extract_Polygon_Coors()
+b.request_filename()
 
 #Compare the laser and file coordinates
