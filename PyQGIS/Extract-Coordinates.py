@@ -2,46 +2,51 @@
 #The first class extracts the polygon, the second the those form the laser data
 #Once this stage is complete, they will need to then be compared and modified
 
-import glob, os #this is for w+r files in a directory
+import glob #this is for w+r files in a directory
 import re #extracts numerical characters from strings
 import pandas as pd #columnises data and outputs to .csv
 from pyproj import Proj, transform #converts coordinates
 import numpy as np #has to be run with pandass
-#from PyQt5.QtWidgets import QInputDialog #This enables user inputs
+from PyQt5.QtWidgets import QInputDialog #This enables user inputs
+from os import listdir
+from os.path import isfile, join
 
-
-#lasinfo_import_location =  r"X:\Arch&CivilEng\ResearchProjects\GGiardina\PhD\sar73\CaseStudies\Napa\Data\LasTools\Info\2003"
-#lasinfo_coor_export_location =  r"C:\Users\sar73\OneDrive - University of Bath\Doctorate\Case Studies\Napa Valley\Data\QGis\April"
 
 class Extract_LasInfo_Coors(object):
-
-    lasinfo_import_location =  r"X:\Arch&CivilEng\ResearchProjects\GGiardina\PhD\sar73\CaseStudies\Napa\Data\LasTools\Info\2014"
+    lasinfo_import_location =  (r"X:\Arch&CivilEng\ResearchProjects\GGiardina\PhD\sar73\CaseStudies\Napa\Data\LasTools\Info" + "\\" + "2014")
     lasinfo_coor_export_location =  r"C:\Users\sar73\OneDrive - University of Bath\Doctorate\Case Studies\Napa Valley\Data\QGis\April"
 
+    #Gathers information on filenames, directories and CRS'
     def request_information(self):
-        #Ask the user for a filename and year, then concatinates with director
-        # concatinate it with the export path
-        self.user_coors = 26910 #This is fixed for now, but delete when in use
-        #self.user_coors = input("Please choose CRS: ")
-        self.user_filename = input("Save file as: ")
-        self.export_file = self.lasinfo_coor_export_location + "\\" + self.user_filename + ".csv"
+        #Ask user for filename, acquisition year and CRS
+        self.user_filename = "Laser_Coordinates_2014"
+        self.user_coors = 26910 #2003 and 2014 (opentopo)
+        #self.user_coors = 6418 #2011 (opentopo)
         
+        #Below request input from the user
+        '''self.user_filename = input("Save file as: ")
+        self.user_coors = input("Please choose CRS: ")'''
+        
+        #Import the filenames form the dir and create an export path + file
+        self.import_filenames = [f for f in listdir(self.lasinfo_import_location) if isfile(join(self.lasinfo_import_location, f))]
+        self.export_file = self.lasinfo_coor_export_location + "\\" + self.user_filename + ".csv"
+
         #Validation to ensure filename contains no spaces
         if " " in self.user_filename:
             print ("Spaces are not allowed")
             self.request_information()
         else:
             self.clean_lasinfo_coors()
+            #self.read_lasfiles()
 
     def read_lasinfo_coors(self, file):
-        global min, max
         with open(file, 'rt') as fd:
             for i, line in enumerate(fd):
                 if i == 19:
-                    min = str(line)
+                    self.min = str(line)
                 elif i == 20:
-                    max = str(line)
-        return str(min) + str(max)
+                    self.max = str(line)
+        return str(self.min) + str(self.max)
 
 
     def clean_lasinfo_coors(self):
@@ -49,65 +54,75 @@ class Extract_LasInfo_Coors(object):
         complete_folder_path = self.lasinfo_import_location + "\\"
         lasinfo_files = glob.glob(complete_folder_path + "*.txt")
         
-        #Map extract lines from read_lasinfo_coors() and to the various
+        #Map extracted lines from read_lasinfo_coors() to the various
         #LasInfo .txt files
         map_lines_and_files = list(map(self.read_lasinfo_coors, lasinfo_files))
         output_strings = re.findall("\d+\.\d+", str(map_lines_and_files))
-        
+
         #Remove the z coordinate info and create x and y lists
         del output_strings[2::3]
-        self.x_coor = output_strings[::2]
-        self.y_coor = output_strings[1::2]
-
+        self.x_min = output_strings[::4] 
+        self.y_min = output_strings[1::4] 
+        self.x_max = output_strings[2::4] 
+        self.y_max = output_strings[3::4] 
+        #print (self.x_min, self.y_min, self.x_max, self.y_max)
+        
         self.convert_lasinfo_coors()
 
+    #Covert coordinates and output to .csv
     def convert_lasinfo_coors(self):
-        #Convert coordinates into floats and then the correct CRS
-        #input_projection = Proj('epsg:26910')
+        #Select the input and output CRS. Input is selected by user
         input_projection = Proj('epsg:'+ str(self.user_coors))
-        output_projection = Proj('epsg:4326')
-        x1, y1 = np.array(self.x_coor,float), np.array(self.y_coor, float)
-        x2, y2 = transform(input_projection, output_projection, x1, y1)
+        output_projection = Proj('epsg:4326') #Match to baseline CRS
 
-        #Convert original original data and new data to columns for export
+        #Covert coordinates from list to array
+        xmin, ymin = np.array(self.x_min,float), np.array(self.y_min,float)
+        xmax, ymax = np.array(self.x_max,float), np.array(self.y_max,float)
+    
+        #Transform coordinates
+        x2, y2 = transform(input_projection, output_projection, xmin, ymin)
+        x3, y3= transform(input_projection, output_projection, xmax, ymax)
+        
+        #Define column headers
         data = pd.DataFrame()
-        data ["Pre-Conversion X"] = x1
-        data ["Pre-Conversion Y"] = y1
-        data ["Converted X"] = x2
-        data ["Converted Y"] = y2
+        data ["Filename"] = self.import_filenames
+        data ["X-Min"] = y2 #They are coverted backwards. NEEDS INVESTIGATING
+        data ["Y-Min"] = x2
+        data ["X-Max"] = y3
+        data ["Y-Max"] = x3
         print(data)
-
+        
         #Output to a .csv
         if not data.to_csv (self.export_file, index = False, header=True):
             print (self.user_filename, "created")
         else:
             print (self.user_filename, "creation FAILED")
 
-class Extract_Polgygon_Coors(object):
-
-    #layer = iface.activeLayer()
-    #features = layer.getFeatures()
-
+class Extract_Polygon_Coors(object):
+    
+    polygon_coor_export_location = r"C:\Users\sar73\OneDrive - University of Bath\Doctorate\Case Studies\Napa Valley\Data\QGis\April"
+   
     #Asks the user to choose a filename
-    def request_filename():
+    def request_filename(self):
         #global self.export_file
-        
         #Captures the users filename and concatinates it to the the directory
         request_filename = QInputDialog.getText(None, "Save file as","File name:")
         clean_filename = list((request_filename[0]).split(','))
-        self.export_file = (polygon_coor_export_location + "\\" + ((''.join(clean_filename))) + ".csv")
+        self.export_file = (self.polygon_coor_export_location + "\\" + ((''.join(clean_filename))) + ".csv")
+        #self.export_file = (self.polygon_coor_export_location + "\\" + ((''.join(clean_filename))) + ".csv")
         
         #Validation to prevent spaces in file name. NEEDS WORK
         if " " in clean_filename:
             print ("Spaces are not allowed")
-            return request_filename
+            self.request_filename()
         else:
-            return polygon_coor_extract()
+            self.polygon_coor_extract()
     
     #Extracts the coordinates of the polygon(s)
-    def polygon_coor_extract():
-        #global self.x_coor
-        #global self.y_coor
+    def polygon_coor_extract(self):
+        layer = iface.activeLayer()
+        features = layer.getFeatures()
+
         for feature in features:  
             geom = feature.geometry()
             geomSingleType = QgsWkbTypes.isSingleType(geom.wkbType())
@@ -125,17 +140,17 @@ class Extract_Polgygon_Coors(object):
             
             #Round coordinates to correct length and split into x y lists
             float_coor = [round(float(i),6) for i in x]
+            #self.xy = zip(float_coor[::2], float_coor[1::2])
             self.x_coor = float_coor[::2]
             self.y_coor = float_coor[1::2]
-            #xy = float_coor[0:1]
-            #print(self.x_coor, self.y_coor)
-            #print(xy)
-            return polygon_coor_export()
+            #return self.x_coor
+            #print(list(self.xy))
+            
+            #self.polygon_coor_export()
             
     #Exports the coordinates to a csv file
-    def polygon_coor_export():
+    def polygon_coor_export(self):
         data = pd.DataFrame()
-        #col_names = ['Latitude','Logitude']
         data ["X Coordinates"] = self.x_coor
         data ["Y Coordinates"] = self.y_coor
         drop_last = data.drop(data.index[len(data)-1]) #This removes the repeated 1st coordinate
@@ -148,7 +163,13 @@ class Extract_Polgygon_Coors(object):
             print ("File failed")    
 
 
-a = Extract_LasInfo_Coors()
-a.request_information()
+        
+#Extract coordinates from the laser files
+#a = Extract_LasInfo_Coors()
+#a.request_information()
 
-#b = Extract_Polgygon_Coors()
+#Extract coordinates from the polygon
+#b = Extract_Polygon_Coors()
+#b.request_filename()
+
+#Compare the laser and file coordinates
