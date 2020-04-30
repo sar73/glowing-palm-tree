@@ -146,7 +146,11 @@ class Extract_Polygon_Coors(object):
             #return self.x_coor
             #print(list(self.xy))
             
+<<<<<<< Updated upstream
             #self.polygon_coor_export()
+=======
+            self.polygon_coor_export()
+>>>>>>> Stashed changes
             
     #Exports the coordinates to a csv file
     def polygon_coor_export(self):
@@ -165,8 +169,13 @@ class Extract_Polygon_Coors(object):
 
         
 #Extract coordinates from the laser files
+<<<<<<< Updated upstream
 #a = Extract_LasInfo_Coors()
 #a.request_information()
+=======
+a = Extract_LasInfo_Coors()
+a.request_information()
+>>>>>>> Stashed changes
 
 #Extract coordinates from the polygon
 b = Extract_Polygon_Coors()
