@@ -13,15 +13,15 @@ from os.path import isfile, join
 
 
 class Extract_LasInfo_Coors(object):
-    lasinfo_import_location =  (r"X:\Arch&CivilEng\ResearchProjects\GGiardina\PhD\sar73\CaseStudies\Napa\Data\LasTools\Info" + "\\" + "2014")
-    lasinfo_coor_export_location =  r"C:\Users\sar73\OneDrive - University of Bath\Doctorate\Case Studies\Napa Valley\Data\QGis\April"
+    lasinfo_import_location =  (r"X:\Arch&CivilEng\ResearchProjects\GGiardina\PhD\sar73\CaseStudies\Napa\Data\LasTools\Info" + "\\" + "2011_all")
+    lasinfo_coor_export_location =  r"C:\Users\sar73\OneDrive - University of Bath\Doctorate\Case Studies\Napa Valley\Data\QGis\May"
 
     #Gathers information on filenames, directories and CRS'
     def request_information(self):
         #Ask user for filename, acquisition year and CRS
         self.user_filename = "Laser_Coordinates_2014"
-        self.user_coors = 26910 #2003 and 2014 (opentopo)
-        #self.user_coors = 6418 #2011 (opentopo)
+        #self.user_coors = 26910 #2003 and 2014 (opentopo)
+        self.user_coors = 6418 #2011 (USGS)
         
         #Below request input from the user
         '''self.user_filename = input("Save file as: ")
@@ -48,7 +48,6 @@ class Extract_LasInfo_Coors(object):
                     self.max = str(line)
         return str(self.min) + str(self.max)
 
-
     def clean_lasinfo_coors(self):
         #Complete the folder path & load all the txt files in that directory
         complete_folder_path = self.lasinfo_import_location + "\\"
@@ -71,6 +70,7 @@ class Extract_LasInfo_Coors(object):
 
     #Covert coordinates and output to .csv
     def convert_lasinfo_coors(self):
+        global x2, x3, y2, y3
         #Select the input and output CRS. Input is selected by user
         input_projection = Proj('epsg:'+ str(self.user_coors))
         output_projection = Proj('epsg:4326') #Match to baseline CRS
@@ -80,27 +80,29 @@ class Extract_LasInfo_Coors(object):
         xmax, ymax = np.array(self.x_max,float), np.array(self.y_max,float)
     
         #Transform coordinates
-        x2, y2 = transform(input_projection, output_projection, xmin, ymin)
-        x3, y3= transform(input_projection, output_projection, xmax, ymax)
+        y2, x2 = transform(input_projection, output_projection, xmin, ymin)
+        y3, x3 = transform(input_projection, output_projection, xmax, ymax)
         
+        #print (x3)
+        #print (y3)
+
         #Define column headers
         data = pd.DataFrame()
         data ["Filename"] = self.import_filenames
-        data ["X-Min"] = y2 #They are coverted backwards. NEEDS INVESTIGATING
-        data ["Y-Min"] = x2
-        data ["X-Max"] = y3
-        data ["Y-Max"] = x3
-        print(data)
+        data ["X-Min"] = x2 
+        data ["X-Max"] = x3
+        data ["Y-Min"] = y2
+        data ["Y-Max"] = y3
+        #print(data)
         
         #Output to a .csv
-        if not data.to_csv (self.export_file, index = False, header=True):
+        '''if not data.to_csv (self.export_file, index = False, header=True):
             print (self.user_filename, "created")
         else:
-            print (self.user_filename, "creation FAILED")
+            print (self.user_filename, "creation FAILED")'''
 
 class Extract_Polygon_Coors(object):
-    
-    polygon_coor_export_location = r"C:\Users\sar73\OneDrive - University of Bath\Doctorate\Case Studies\Napa Valley\Data\QGis\April"
+    polygon_coor_export_location = r"C:\Users\sar73\OneDrive - University of Bath\Doctorate\Case Studies\Napa Valley\Data\QGis\May"
    
     #Asks the user to choose a filename
     def request_filename(self):
@@ -109,7 +111,6 @@ class Extract_Polygon_Coors(object):
         request_filename = QInputDialog.getText(None, "Save file as","File name:")
         clean_filename = list((request_filename[0]).split(','))
         self.export_file = (self.polygon_coor_export_location + "\\" + ((''.join(clean_filename))) + ".csv")
-        #self.export_file = (self.polygon_coor_export_location + "\\" + ((''.join(clean_filename))) + ".csv")
         
         #Validation to prevent spaces in file name. NEEDS WORK
         if " " in clean_filename:
@@ -120,6 +121,7 @@ class Extract_Polygon_Coors(object):
     
     #Extracts the coordinates of the polygon(s)
     def polygon_coor_extract(self):
+        global x_coor, y_coor
         layer = iface.activeLayer()
         features = layer.getFeatures()
 
@@ -141,16 +143,14 @@ class Extract_Polygon_Coors(object):
             #Round coordinates to correct length and split into x y lists
             float_coor = [round(float(i),6) for i in x]
             #self.xy = zip(float_coor[::2], float_coor[1::2])
-            self.x_coor = float_coor[::2]
-            self.y_coor = float_coor[1::2]
+            #self.x_coor = float_coor[::2]
+            #self.y_coor = float_coor[1::2]
+            x_coor = float_coor[::2]
+            y_coor = float_coor[1::2]
             #return self.x_coor
             #print(list(self.xy))
             
-<<<<<<< Updated upstream
             #self.polygon_coor_export()
-=======
-            self.polygon_coor_export()
->>>>>>> Stashed changes
             
     #Exports the coordinates to a csv file
     def polygon_coor_export(self):
@@ -158,7 +158,7 @@ class Extract_Polygon_Coors(object):
         data ["X Coordinates"] = self.x_coor
         data ["Y Coordinates"] = self.y_coor
         drop_last = data.drop(data.index[len(data)-1]) #This removes the repeated 1st coordinate
-        print (drop_last)
+        #print (drop_last)
 
         #creates .csv
         if not drop_last.to_csv(self.export_file):
@@ -166,19 +166,20 @@ class Extract_Polygon_Coors(object):
         else:
             print ("File failed")    
 
+class compare_coors(object):
+    def load_coors(self):
+        #print(x2, x3, y2, y3)
+        print(x_coor, y_coor)
 
         
 #Extract coordinates from the laser files
-<<<<<<< Updated upstream
-#a = Extract_LasInfo_Coors()
-#a.request_information()
-=======
 a = Extract_LasInfo_Coors()
 a.request_information()
->>>>>>> Stashed changes
 
 #Extract coordinates from the polygon
 b = Extract_Polygon_Coors()
 b.request_filename()
 
 #Compare the laser and file coordinates
+c = compare_coors()
+c.load_coors()
