@@ -13,11 +13,13 @@ from os.path import isfile, join
 
 
 class Extract_LasInfo_Coors(object):
+
     lasinfo_import_location =  (r"X:\Arch&CivilEng\ResearchProjects\GGiardina\PhD\sar73\CaseStudies\Napa\Data\LasTools\Info" + "\\" + "2011_all")
     lasinfo_coor_export_location =  r"C:\Users\sar73\OneDrive - University of Bath\Doctorate\Case Studies\Napa Valley\Data\QGis\May"
 
     #Gathers information on filenames, directories and CRS'
     def request_information(self):
+        global import_filenames, export_file
         #Ask user for filename, acquisition year and CRS
         self.user_filename = "Laser_Coordinates_2014"
         #self.user_coors = 26910 #2003 and 2014 (opentopo)
@@ -28,8 +30,10 @@ class Extract_LasInfo_Coors(object):
         self.user_coors = input("Please choose CRS: ")'''
         
         #Import the filenames form the dir and create an export path + file
-        self.import_filenames = [f for f in listdir(self.lasinfo_import_location) if isfile(join(self.lasinfo_import_location, f))]
-        self.export_file = self.lasinfo_coor_export_location + "\\" + self.user_filename + ".csv"
+        import_filenames = [f for f in listdir(self.lasinfo_import_location) if isfile(join(self.lasinfo_import_location, f))]
+        #self.import_filenames = [f for f in listdir(self.lasinfo_import_location) if isfile(join(self.lasinfo_import_location, f))]
+        #self.export_file = self.lasinfo_coor_export_location + "\\" + self.user_filename + ".csv"
+        export_file = self.lasinfo_coor_export_location + "\\" + self.user_filename + ".csv"
 
         #Validation to ensure filename contains no spaces
         if " " in self.user_filename:
@@ -83,9 +87,7 @@ class Extract_LasInfo_Coors(object):
         y2, x2 = transform(input_projection, output_projection, xmin, ymin)
         y3, x3 = transform(input_projection, output_projection, xmax, ymax)
         
-        #print (x3)
-        #print (y3)
-
+        '''
         #Define column headers
         data = pd.DataFrame()
         data ["Filename"] = self.import_filenames
@@ -96,7 +98,7 @@ class Extract_LasInfo_Coors(object):
         #print(data)
         
         #Output to a .csv
-        '''if not data.to_csv (self.export_file, index = False, header=True):
+        if not data.to_csv (self.export_file, index = False, header=True):
             print (self.user_filename, "created")
         else:
             print (self.user_filename, "creation FAILED")'''
@@ -108,7 +110,8 @@ class Extract_Polygon_Coors(object):
     def request_filename(self):
         #global self.export_file
         #Captures the users filename and concatinates it to the the directory
-        request_filename = QInputDialog.getText(None, "Save file as","File name:")
+        #request_filename = QInputDialog.getText(None, "Save file as","File name:")
+        request_filename = 'Sach'
         clean_filename = list((request_filename[0]).split(','))
         self.export_file = (self.polygon_coor_export_location + "\\" + ((''.join(clean_filename))) + ".csv")
         
@@ -168,10 +171,59 @@ class Extract_Polygon_Coors(object):
 
 class compare_coors(object):
     def load_coors(self):
-        #print(x2, x3, y2, y3)
-        print(x_coor, y_coor)
+        x_min = x2 
+        x_max = x3 
+        y_min = y2
+        y_max = y3
+        files = import_filenames
+        x_user = x_coor
+        y_user = y_coor
+        #print(x_min, x_max, y_min)
+        #print(x_coor, y_coor)
 
+        #minn = list(zip(x_min, y_min))
+        #maxx = list(zip(x_max, y_max))
+        #mima =  list(zip(minn,maxx))
+
+        minn = [1, 1]
+        maxx = [3, 3]
+        user = [(2, 2), (1,2)]
+
+
+        #print(mima)
+        #user = list(zip(x_user, y_user))
+
+        print  (minn [0] <user[0] < maxx[0] and\
+                minn [1] <user[1] < maxx[1])
+
+        results [(a, b) for a, b in minn if (a < 
+
+        '''x = list(zip(x_min, x_max))
+        y = list(zip(y_min, y_max))
         
+        x_result = [(a, b) for a, b in x if any(a <= item <= b for item in x_user)]
+        print(x_result)
+
+        y_result = [(a, b) for a, b in y if any(a <= item <= b for item in y_user)]
+        print(y_result) 
+        '''
+        #Assigning coors to a dataframe
+        data = pd.DataFrame()
+        data ["Filename"] = files
+        data ["X-Min"] = x_min
+        data ["Y-Min"] = y_min
+        data ["X-Max"] = x_max
+        data ["Y-Max"] = y_max
+        #data ["X-Coor"] = x_coor
+        #data ["Y-Coor"] = y_coor
+        #print(data)
+
+        #Export dataframe to .csv
+        if not data.to_csv (export_file, index = False, header=True):
+            print ("created")
+        else:
+            print ( "creation FAILED")
+
 #Extract coordinates from the laser files
 a = Extract_LasInfo_Coors()
 a.request_information()
