@@ -120,12 +120,11 @@ class Extract_Polygon_Coors(object):
     def request_filename(self):
         #global self.export_file
         #Captures the users filename and concatinates it to the the directory
-        #request_filename = QInputDialog.getText(None, "Save file as","File name:")
-        request_filename = 'Sach'
+        request_filename = QInputDialog.getText(None, "Save file as","File name:")
         clean_filename = list((request_filename[0]).split(','))
         self.export_file = (self.polygon_coor_export_location + "\\" + ((''.join(clean_filename))) + ".csv")
         
-        #Validation to prevent spaces in file name. NEEDS WORK
+        #Validation to prevent spaces in file name. NOT 100% Robust
         if " " in clean_filename:
             print ("Spaces are not allowed")
             self.request_filename()
@@ -160,10 +159,8 @@ class Extract_Polygon_Coors(object):
             #self.y_coor = float_coor[1::2]
             x_coor = float_coor[::2]
             y_coor = float_coor[1::2]
-            #return self.x_coor
-            #print(list(self.xy))
             
-            #self.polygon_coor_export()
+            self.polygon_coor_export()
             
     #Exports the coordinates to a csv file
     def polygon_coor_export(self):
@@ -247,5 +244,5 @@ b = Extract_Polygon_Coors()
 b.request_filename()
 
 #Compare the laser and file coordinates
-c = compare_coors()
-c.load_coors()
+#c = compare_coors()
+#c.load_coors()
