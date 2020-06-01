@@ -4,7 +4,7 @@ It should NOT be referred to for any other files.
 The Extract-Coordinates tool will extract the coordinates from the laser files and
 a user defind polygon.  
 
-In order to apply the script to a new environment, the following parameters 
+In order to apply the script to a new environment, 5 parameters 
 need updating:
     class Extract_LasInfo_Coors(object):
         1.lasinfo_import_location - This points the programme to the laser file location
