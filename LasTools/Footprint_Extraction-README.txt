@@ -4,7 +4,7 @@ It should NOT be referred to for any other files.
 The Footprint_extraction tool will extract the footprints of buildings from .las or .laz files
 and ouput a .shp file. This can be read by QGIS or ArcQGIS
 
-In order to apply the script to a new environment, the following parameters 
+In order to apply the script to a new environment, 11 parameters 
 need updating:
 
 1. The LasTools Path
