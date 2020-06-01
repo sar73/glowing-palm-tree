@@ -1,9 +1,11 @@
-This is the read-me guide for the Extrac-Coordinates.py script file.
+This is the read-me guide for the Extract-Coordinates.py script file.
 It should NOT be referred to for any other files. 
 
-In order to apply the script to a new environment, the following parameters need updating
+The Extract-Coordinates tool will extract the coordinates from the laser files and
+a user defind polygon.  
 
-Parameters that need changing:
+In order to apply the script to a new environment, the following parameters 
+need updating:
     class Extract_LasInfo_Coors(object):
         1.lasinfo_import_location - This points the programme to the laser file location
         2.lasinfo_coor_export_location - This is where the .csv file containing coordinates will be exported to
