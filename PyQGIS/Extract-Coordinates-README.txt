@@ -19,4 +19,4 @@ need updating:
 The above has been further highlighted in the .py file through the use of comment colours, where
 Orange comments instruct that variables need changing, whereas Green provides general information.
 
-Both the .py file and this docuemnt were created by Sachin Alexander Reddy, Feb 2020 - May 2020.
+Both the .py file and this document were created by Sachin Alexander Reddy, Feb 2020 - May 2020.
