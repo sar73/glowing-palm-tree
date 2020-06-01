@@ -34,4 +34,4 @@ Convert into footprints
 This should be viewed as a checklist for changes. Details of what the actual
 paramters are can be found within the .bat file.
 
-Both the .bat file and this docuemnt were created by Sachin Alexander Reddy, Feb 2020 - May 2020.
+Both the .bat file and this document were created by Sachin Alexander Reddy, Feb 2020 - May 2020.
