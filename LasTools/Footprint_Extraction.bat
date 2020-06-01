@@ -12,120 +12,149 @@ cd/d X:\Arch^&CivilEng\ResearchProjects\GGiardina\PhD\sar73\CaseStudies\Napa\Dat
 ::  ------------------ PRE ANALYSIS CHECKS -----------------------
 
 ::Indexing significantly improves the speed of spatial queries
-::lasindex -i Laser\2014\Sample\*.laz -cores 4
+::lasindex -i Laser\2011\Sample\*.laz -cores 4
 
 ::Before processing sanity check. Take before processing screenshot
-::lasview -i Laser\2014\Sample\*.laz -gui
+::lasview -i Laser\2011\Sample\*.laz -gui
 
 ::Now make sure that our work will be worthwhile by running a quick visualization based of how well the flight strips fit together
 ::Examine how well the flightstrips fit togethser by identifying 
-::lasoverlap -i laser\2014\overlapped\*.laz ^
+::lasoverlap -i laser\2011\overlapped\*.laz ^
 ::            -odir LasTools\Overlap ^
 ::            -odix "merged-overlap" -opng ^
 
-::pause
-
-:: ----------------- EXTRACT BUILDINGS ONLY --------------------
+:: ---------------------------------------------------
+:: ----------------- PREPARE DATA --------------------
+:: ---------------------------------------------------
 
 ::Create a temporary tiles directory
-rmdir LasTools\FootprintExtraction\1_Tiles\2014 /s /q
-mkdir LasTools\FootprintExtraction\1_Tiles\2014
+::rmdir LasTools\FootprintExtraction\1_Tiles\2011 /s /q
+::mkdir LasTools\FootprintExtraction\1_Tiles\2011
 
-:: create a temporary and reversible tiles with a size of 250 and a buffer of 25
-::pastes all at once 
-lastile -i laser\2014\Sample\*.laz ^
-            -tile_size 250 -buffer 25 ^
-           -odir LasTools\Tiles\2014 ^
-            -o tiled.laz -olaz 
+:: ---------   LAS TILES    ---------
+:: This is a tool for bare-earth extraction: it classifies LIDAR
+::points into ground points (class = 2) and non-ground points (class = 1).
 
-::lasview -i LasTools\Tiles\2014\*.laz -gui
+:: PARAMETERS TO CHANGE 
+:: Tile Size: decrease if sample is small
+:: Buffer: This is necessary for triangulation during Las Height. 
+
+::lastile -i laser\2011\Sample\*.laz ^
+::            -tile_size 500 -buffer 25 ^
+::            -odir LasTools\FootprintExtraction\1_Tiles\2011 ^
+::            -o tiled.laz -olaz 
+
+::Check if tiles and buffers seem sensible
+::lasview -i LasTools\FootprintExtraction\1_Tiles\2011\*.laz -gui
 
 ::pause
 
-:: create a temporary ground directory
-rmdir LasTools\FootprintExtraction\2_Ground\2014 /s /q
-mkdir LasTools\FootprintExtraction\2_Ground\2014
+:: ---------------------------------------------------
+:: ----------------- EXTRACT BUILDINGS ONLY ----------
+:: ---------------------------------------------------
 
-:: This is a tool for bare-earth extraction: it classifies LIDAR points into ground points (class = 2) and non-ground points
-::(class = 1). This will run it on 4 cores (one tile per core) with town settings and ultra_fine refinement
-::Pastes after a while
-lasground -i LasTools\Tiles\2014\*.laz ^
-            ::-town - ultra_fine ^ Town is 10. Lower is better for forests
-            -step 8 -fine ^
-            -odir LasTools\Ground\2014 -olaz ^
-            -cores 4
+:: create a temporary ground directory
+::rmdir LasTools\FootprintExtraction\2_Ground\2011 /s /q
+::mkdir LasTools\FootprintExtraction\2_Ground\2011
+
+
+:: ---------   LAS GROUND    ---------
+:: This is a tool for bare-earth extraction: it classifies LIDAR
+::points into ground points (class = 2) and non-ground points (class = 1).
+
+:: PARAMETERS TO CHANGE 
+:: Step 5 = forests 10 = towns, 25 = cities.
+:: Refinement: Ultra fine = steep hills, fine = hills, nothing = flat
+:: Unlike other tools, this pastes right at the end of the process.
+
+::lasground -i LasTools\FootprintExtraction\1_Tiles\2011\*.laz ^
+::            -town -fine ^
+::            -odir LasTools\FootprintExtraction\2_Ground\2011 -olaz ^
+::            -cores 4
 
 ::deletes the original tile directory and it's contents 
-rmdir LasTools\Tiles\2014 /s /q
+::rmdir LasTools\FootprintExtaction\1_Tiles\2011 /s /q
+
 
 ::create a height tiles directory
-::rmdir LasTools\Height\2014 /s /q
-mkdir LasTools\Height\2014
+::rmdir LasTools\FootprintExtraction\3_Height\2011 /s /q
+::mkdir LasTools\FootprintExtraction\3_Height\2011
 
-::Las Height uses the points classified as ground to construct a TIN and then calculates the height of all other points in respect to this ground 
-::surface. This will ignore points below 2m below and 30m above
-lasheight -i LasTools\Ground\2014\*.laz ^
-            ::-replace_z ^
-            -drop_below 1 -drop_above 10 ^
-            ::-class 2 6 ^
-            -odir LasTools\Height\2014 -olaz ^
-            -cores 4
+:: ---------   LAS HEIGHT    ---------
+::Las Height uses the points classified in LasGround to construct a TIN. 
+::Then calculates the height of all other points in respect to this ground
 
-::lasheight -i LasTools\Ground\2014\*.laz ^
-::           -drop_below 2 -drop_above 30 ^
-::            -odir LasTools\Height\2014 -olaz ^
+:: PARAMETERS TO CHANGE (x3.28 for imperial)
+:: Drop_below will ignore points below this
+:: Drop_above will ignore points above this 
+
+::lasheight -i LasTools\FootprintExtraction\2_Ground\2011\*.laz ^
+::            -drop_below 6 -drop_above 30 ^
+::           -odir LasTools\FootprintExtraction\3_Height\2011 -olaz ^
 ::            -cores 4
 
 ::deletes the lasground directory and it's contents
-::rmdir LasTools\Ground\2014 /s /q
+::rmdir LasTools\FootprintExtraction\2_Ground\2011 /s /q
 
 
 ::create a classify tiles directory
-::rmdir LasTools\Classify\2014 /s /q
-mkdir LasTools\Classify\2014
+::rmdir LasTools\FootprintExtraction\4_Classify\2011 /s /q
+::mkdir LasTools\FootprintExtraction\4_Classify\2011
 
-::This tool classifies buildings and high vegetation. It requires that both bare-earth points (lasground) and points above ground (lasheight) have been 
-::computed. Step is for computing planarity/ruggedness. Higher = less false positives but it may miss smaller buildings. This can be verified with 
-:: lasboundary and a kml output. Step size is the grid cell size for planar analysis. Lower = more accuracy, 
-:: but the data must exist for interpolation to be accurate. Tutorial was 3
-:: default is 2
-lasclassify -i LasTools\Height\2014\*.laz ^
-            -step 2 ^
-            -odir LasTools\Classify\2014 -olaz ^
-            -cores 4
+:: ---------   LAS CLASSIFY    ---------
+::This tool classifies buildings and high vegetation. It requires both
+::bare-earth points (lasground) and points above ground (lasheight)
+
+:: PARAMETERS TO CHANGE
+:: Step: computers the planarity and ruggenedness. Higher = less false positives
+::LasClassify -i LasTools\FootprintExtraction\3_Height\2011\*.laz ^
+::            -step 3 ^
+::            -odir LasTools\FootprintExtraction\4_Classify\2011 -olaz ^
+::            -cores 4
 
 ::deletes the las height directory and it's contents
-::rmdir Lastools\Height\2014 /s /q
+::rmdir Lastools\Height\2011 /s /q
 
-::create a final tiles directory 
-rmdir LasTools\Final\2014 /s /q
-mkdir LasTools\Final\2003_new
+::lasview -i LasTools\FootprintExtraction\4_Classify\2011\*.laz -gui
 
-::Create the final tiles and remove the buffer
-::This is very quick...
-lastile -i LasTools\Classify\2014\*.laz ^
-            -set_user_data 0 ^
+::pause
+
+:: ----------------------------------------------------
+:: ----------------- REMOVE BUFFER --------------------
+:: ----------------------------------------------------
+
+rmdir LasTools\FootprintExtraction\5_Clean\2011 /s /q
+mkdir LasTools\FootprintExtraction\5_Clean\2011
+
+:: ---------   LAS TILE    ---------
+:: This tool removes the buffer as triangulation is now complete
+:: PARAMETERS TO CHANGE
+:: NONE
+lastile -i LasTools\FootprintExtraction\4_Classify\2011\*.laz ^
+           -set_user_data 0 ^
             -remove_buffer ^
-            -odir LasTools\Final\2003_new -olaz
+            -odir LasTools\FootprintExtraction\5_Clean\2011 -olaz
+
 
 ::delete the LasClassify
-::rmdir LasTools\Classify\2014 /s /q
+::rmdir LasTools\Classify\2011 /s /q
 
-::View 2014 after processing. This can also be compared with the original
-::to assess the quality of the process
+::View classified laser data. This can also be compared with the original
+::to assess the quality of the process, or just used as a santiy check
+::lasview -i LasTools\FootprintExtraction\5_Clean\2011\*.laz -gui
 
-lasview -i LasTools\Final\2003_new\*.laz -gui
+::pause
 
-pause
-
+:: ----------------------------------------------------------------
 :: ----------------- CONVERT INTO FOOTPRINTS ----------------------
+:: ----------------------------------------------------------------
 
-::mkdir LasTools\Footprints\2014
+::rmdir LasTools\FootprintExtraction\6_Footprints\2011 /s /q
+::mkdir LasTools\FootprintExtraction\6_Footprints\2011
 ::Determines the building footprints. lower concavity is better but more computationally expensive
 ::default is 1.5, but 1.2 is the lowest without building loss Class 6 is buildings, if this was changed to 5 if would identify vegetation
-lasboundary -i LasTools\Final\2003_new\*.laz -merged ^
-            -keep_class 6 ^
-            -concavity 1.9 -disjoint ^
-            -odir LasTools\Footprints\2014 ^
-            -o 2014_Browns_1-10_2_2.shp
-            ::-o 2003_Browns_3-10_3_1-9.shp
+::lasboundary -i LasTools\FootprintExtraction\5_Clean\2011\*.laz -merged ^
+::            -keep_class 6 ^
+::            -concavity 2 -disjoint ^
+::            -odir LasTools\FootprintExtraction\6_Footprints\2011 ^
+::            -o 2011_Browns_6-30_3_2.shp
