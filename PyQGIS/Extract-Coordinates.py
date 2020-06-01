@@ -1,19 +1,24 @@
-#This document contains the two coordinate extraction methods
-#The first class extracts the polygon, the second the those form the laser data
-#Once this stage is complete, they will need to then be compared and modified
+'''This file runs a program which extracts the coordinates of 
+a user defined area within QGIS, the coordinates from the 
+data itself and then starts to compare the removal of non-needed
+data.
+The final stage is NOT complete and is still under development'''
 
-import glob #this is for w+r files in a directory
-import re #extracts numerical characters from strings
-import pandas as pd #columnises data and outputs to .csv
-from pyproj import Proj, transform #converts coordinates
-import numpy as np #has to be run with pandass
-from PyQt5.QtWidgets import QInputDialog #This enables user inputs
-from os import listdir
-from os.path import isfile, join
+import glob                                 #this is for w+r files in a directory
+import re                                   #extracts numerical characters from strings
+import pandas as pd                         #columnises data and outputs to .csv
+from pyproj import Proj, transform          #converts coordinates
+import numpy as np                          #has to be run with pandass
+from PyQt5.QtWidgets import QInputDialog    #This enables user inputs
+from os import listdir                      #Returns a list of files in path
+from os.path import isfile, join            #Returns only files and joins the results
 
 
+#This class extracts the coordinates from the laser (.las/.laz) files
+#and outputs them to a .csv
 class Extract_LasInfo_Coors(object):
-
+    #The variables below declare the location of the laser files and where to export to
+    '''Define import location and export location''' 
     lasinfo_import_location =  (r"X:\Arch&CivilEng\ResearchProjects\GGiardina\PhD\sar73\CaseStudies\Napa\Data\LasTools\Info" + "\\" + "2011_all")
     lasinfo_coor_export_location =  r"C:\Users\sar73\OneDrive - University of Bath\Doctorate\Case Studies\Napa Valley\Data\QGis\May"
 
@@ -22,12 +27,13 @@ class Extract_LasInfo_Coors(object):
         global import_filenames, export_file
         #Ask user for filename, acquisition year and CRS
         self.user_filename = "Laser_Coordinates_2014"
+        '''Define coordinate systems'''
         #self.user_coors = 26910 #2003 and 2014 (opentopo)
-        self.user_coors = 6418 #2011 (USGS)
+        self.user_coors = 6418 #2011 (USGS) 
         
-        #Below request input from the user
-        '''self.user_filename = input("Save file as: ")
-        self.user_coors = input("Please choose CRS: ")'''
+        #Below request input from the user (REPLACED BY ABOVE)
+        #self.user_filename = input("Save file as: ")
+        #self.user_coors = input("Please choose CRS: ")
         
         #Import the filenames form the dir and create an export path + file
         import_filenames = [f for f in listdir(self.lasinfo_import_location) if isfile(join(self.lasinfo_import_location, f))]
@@ -43,6 +49,7 @@ class Extract_LasInfo_Coors(object):
             self.clean_lasinfo_coors()
             #self.read_lasfiles()
 
+    #Binds the file contents with the filename
     def read_lasinfo_coors(self, file):
         with open(file, 'rt') as fd:
             for i, line in enumerate(fd):
@@ -52,6 +59,7 @@ class Extract_LasInfo_Coors(object):
                     self.max = str(line)
         return str(self.min) + str(self.max)
 
+    #Extracts the coordinates and cleans the output
     def clean_lasinfo_coors(self):
         #Complete the folder path & load all the txt files in that directory
         complete_folder_path = self.lasinfo_import_location + "\\"
@@ -77,6 +85,7 @@ class Extract_LasInfo_Coors(object):
         global x2, x3, y2, y3
         #Select the input and output CRS. Input is selected by user
         input_projection = Proj('epsg:'+ str(self.user_coors))
+        '''Define the QGIS CRS'''
         output_projection = Proj('epsg:4326') #Match to baseline CRS
 
         #Covert coordinates from list to array
@@ -87,7 +96,6 @@ class Extract_LasInfo_Coors(object):
         y2, x2 = transform(input_projection, output_projection, xmin, ymin)
         y3, x3 = transform(input_projection, output_projection, xmax, ymax)
         
-        '''
         #Define column headers
         data = pd.DataFrame()
         data ["Filename"] = self.import_filenames
@@ -101,9 +109,11 @@ class Extract_LasInfo_Coors(object):
         if not data.to_csv (self.export_file, index = False, header=True):
             print (self.user_filename, "created")
         else:
-            print (self.user_filename, "creation FAILED")'''
+            print (self.user_filename, "creation FAILED")
 
+#Extracts the coordinates from a user defiend polygon in QGIS and outputs as .csv
 class Extract_Polygon_Coors(object):
+    '''Define the coordinates output location'''
     polygon_coor_export_location = r"C:\Users\sar73\OneDrive - University of Bath\Doctorate\Case Studies\Napa Valley\Data\QGis\May"
    
     #Asks the user to choose a filename
@@ -169,6 +179,10 @@ class Extract_Polygon_Coors(object):
         else:
             print ("File failed")    
 
+'''This class takes the coordinates and compares them. 
+It then removes the unwanted files
+This is VERY MUCH experimental and DOES NOT work.
+SR Can be reached out to for consultation'''
 class compare_coors(object):
     def load_coors(self):
         x_min = x2 
